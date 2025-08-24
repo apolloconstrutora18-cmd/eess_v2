@@ -1,1 +1,85 @@
+/* App.css */
 
+
+.App {
+font-family: Arial, sans-serif;
+text-align: center;
+padding: 20px;
+background: #111;
+color: white;
+}
+
+
+button {
+margin: 10px;
+padding: 10px 20px;
+border-radius: 8px;
+border: none;
+cursor: pointer;
+}
+
+
+.gauges {
+display: flex;
+justify-content: center;
+gap: 60px;
+margin: 40px;
+}
+
+
+.gauge {
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+
+
+.gauge-title {
+font-size: 18px;
+margin-bottom: 10px;
+}
+
+
+.dial {
+position: relative;
+width: 200px;
+height: 200px;
+border-radius: 50%;
+background: conic-gradient(
+green 0deg 162deg, /* até 6000 rpm */
+yellow 162deg 216deg, /* até 8000 rpm */
+red 216deg 270deg, /* zona vermelha */
+#333 270deg 360deg
+);
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+
+.dial.speed {
+background: conic-gradient(
+#1e90ff 0deg 101deg, /* até 120 km/h */
+white 101deg 202deg, /* até 240 km/h */
+red 202deg 270deg, /* acima de 240 */
+#333 270deg 360deg
+);
+}
+
+
+.needle {
+position: absolute;
+width: 4px;
+height: 90px;
+background: white;
+bottom: 50%;
+left: 50%;
+transform-origin: bottom center;
+transition: transform 0.1s linear;
+}
+
+
+.gauge-value {
+margin-top: 10px;
+font-size: 16px;
+}
