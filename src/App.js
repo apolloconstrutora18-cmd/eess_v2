@@ -15,7 +15,7 @@ export default function App() {
   // Sim params
   const MIN_RPM = 900;
   const MAX_RPM = 7900;
-  const MAX_SPEED = 240; // km/h (display)
+  const MAX_SPEED = 320; // km/h (display)
 
   const targetRpmRef = useRef(MIN_RPM);
   const currentRpmRef = useRef(MIN_RPM);
