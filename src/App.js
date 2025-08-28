@@ -36,7 +36,7 @@ export default function App() {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
     // Frequência sonora proporcional à ACELERAÇÃO diretamente
-    const freq = 50 + acceleration * 2000; // aumenta conforme pisa
+    const freq = 50 + acceleration * 200; // aumenta conforme pisa
     oscillatorRef.current.frequency.setValueAtTime(
       freq,
       audioCtxRef.current.currentTime
