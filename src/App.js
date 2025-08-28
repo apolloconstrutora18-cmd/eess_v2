@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 export default function App() {
-  const [acceleration, setAcceleration] = useState(0); 
-  const [rpm, setRpm] = useState(800); 
+  const [acceleration, setAcceleration] = useState(0);
+  const [rpm, setRpm] = useState(800); // marcha lenta
   const [speed, setSpeed] = useState(0);
   const [engineOn, setEngineOn] = useState(false);
 
@@ -11,23 +11,21 @@ export default function App() {
   const oscillatorRef = useRef(null);
   const gainRef = useRef(null);
 
-  // Atualização contínua de RPM e velocidade
+  // Atualização de RPM e velocidade
   useEffect(() => {
     if (!engineOn) return;
 
     const interval = setInterval(() => {
       setRpm((prev) => {
-        const targetRpm = 800 + acceleration * 9200; 
-        return prev + (targetRpm - prev) * 0.3; 
+        const targetRpm = 800 + acceleration * 9200; // 800 até 10000
+        // resposta mais rápida → motor sobe de giro com menos inércia
+        return prev + (targetRpm - prev) * 0.4;
       });
 
-      setSpeed((prev) => {
-        if (acceleration > 0) {
-          return prev + acceleration * 2.0; 
-        } else {
-          return Math.max(0, prev - 0.5);
-        }
-      });
+      setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.2);
+
+      // QUEDA rápida quando solta o acelerador
+      setAcceleration((prev) => Math.max(0, prev - 0.1));
     }, 100);
 
     return () => clearInterval(interval);
@@ -37,7 +35,8 @@ export default function App() {
   useEffect(() => {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
-    const freq = 50 + acceleration * 2000; 
+    // Frequência sonora proporcional à ACELERAÇÃO diretamente
+    const freq = 50 + acceleration * 2000; // aumenta conforme pisa
     oscillatorRef.current.frequency.setValueAtTime(
       freq,
       audioCtxRef.current.currentTime
@@ -50,33 +49,6 @@ export default function App() {
     );
   }, [acceleration, engineOn]);
 
-  // Atalhos: seta para cima e scroll do mouse
-  useEffect(() => {
-    if (!engineOn) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowUp") {
-        setAcceleration((prev) => Math.min(1, prev + 0.1));
-      }
-    };
-
-    const handleWheel = (e) => {
-      if (e.deltaY < 0) {
-        setAcceleration((prev) => Math.min(1, prev + 0.05)); 
-      } else {
-        setAcceleration((prev) => Math.max(0, prev - 0.05)); 
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("wheel", handleWheel);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("wheel", handleWheel);
-    };
-  }, [engineOn]);
-
   // Função para iniciar motor
   const startEngine = () => {
     if (engineOn) return;
@@ -84,7 +56,7 @@ export default function App() {
     audioCtxRef.current = new (window.AudioContext ||
       window.webkitAudioContext)();
 
-    // Som de ignição curto
+    // Som curto de ignição
     const ignitionOsc = audioCtxRef.current.createOscillator();
     const ignitionGain = audioCtxRef.current.createGain();
     ignitionOsc.type = "square";
@@ -122,8 +94,34 @@ export default function App() {
     setEngineOn(false);
     setRpm(800);
     setSpeed(0);
-    setAcceleration(0);
   };
+
+  // Eventos de teclado e scroll
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!engineOn) return;
+      if (e.key === "ArrowUp") {
+        setAcceleration((prev) => Math.min(1, prev + 0.2)); // mais intenso
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (!engineOn) return;
+      if (e.deltaY < 0) {
+        setAcceleration((prev) => Math.min(1, prev + 0.1)); // mais intenso
+      } else if (e.deltaY > 0) {
+        setAcceleration((prev) => Math.max(0, prev - 0.1));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("wheel", handleWheel);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [engineOn]);
 
   const rpmRotation = (rpm / 10000) * 270 - 135;
   const speedRotation = (speed / 220) * 270 - 135;
@@ -162,9 +160,14 @@ export default function App() {
       </div>
 
       {engineOn && (
-        <div className="pedal-status">
-          Pedal (aceleração): {Math.round(acceleration * 100)}%
-        </div>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={acceleration}
+          onChange={(e) => setAcceleration(parseFloat(e.target.value))}
+        />
       )}
     </div>
   );
