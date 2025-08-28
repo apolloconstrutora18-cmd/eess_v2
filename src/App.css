@@ -1,72 +1,64 @@
 .App {
   text-align: center;
   font-family: Arial, sans-serif;
-}
-
-.selectors {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 20px;
+  background: #111;
+  color: #fff;
+  height: 100vh;
+  padding: 20px;
 }
 
 .controls {
-  margin: 20px 0;
+  margin: 20px;
 }
 
-.start-btn, .stop-btn {
+button {
+  background: #333;
+  border: 1px solid #555;
+  color: #fff;
   padding: 10px 20px;
-  font-size: 16px;
-  border: none;
+  margin: 5px;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
 }
 
-.start-btn {
-  background-color: #28a745;
-  color: white;
-}
-
-.stop-btn {
-  background-color: #dc3545;
-  color: white;
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
 }
 
 .gauges {
   display: flex;
   justify-content: center;
-  gap: 50px;
-  margin: 30px 0;
+  margin: 40px 0;
+  gap: 40px;
 }
 
 .gauge {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 200px;
+  height: 200px;
 }
 
 .dial {
   width: 100%;
   height: 100%;
-  border: 10px solid;
+  border: 8px solid #444;
   border-radius: 50%;
-  position: absolute;
-  top: 0;
-  left: 0;
+  background: radial-gradient(circle, #222, #000);
 }
 
 .needle {
-  width: 4px;
-  height: 70px;
   position: absolute;
-  top: 30px;
-  left: calc(50% - 2px);
+  width: 4px;
+  height: 90px;
+  background: red;
+  top: 20px;
+  left: 50%;
   transform-origin: bottom center;
   transition: transform 0.1s linear;
 }
 
 .label {
-  margin-top: 160px;
-  font-weight: bold;
+  margin-top: 10px;
+  font-size: 18px;
 }
