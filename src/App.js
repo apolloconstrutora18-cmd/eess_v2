@@ -3,7 +3,7 @@ import "./App.css";
 
 export default function App() {
   const [acceleration, setAcceleration] = useState(0);
-  const [rpm, setRpm] = useState(0);
+  const [rpm, setRpm] = useState(800); // motor em marcha lenta
   const [speed, setSpeed] = useState(0);
   const [engineOn, setEngineOn] = useState(false);
 
@@ -16,9 +16,12 @@ export default function App() {
     if (!engineOn) return;
 
     const interval = setInterval(() => {
-      setRpm((prev) => prev + (acceleration * 10000 - prev) * 0.2);
+      setRpm((prev) => {
+        const targetRpm = 800 + acceleration * 9200; // 800 (marcha lenta) até 10000
+        return prev + (targetRpm - prev) * 0.2;
+      });
       setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.1);
-      setAcceleration((prev) => Math.max(0, prev - 0.02)); // aceleração volta a zero
+      setAcceleration((prev) => Math.max(0, prev - 0.02)); // aceleração retorna a zero
     }, 100);
 
     return () => clearInterval(interval);
@@ -28,14 +31,17 @@ export default function App() {
   useEffect(() => {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
-    const freq = 100 + (rpm / 10000) * 1900;
+    // Frequência baseia-se no RPM (quanto maior o RPM, mais agudo)
+    const freq = 50 + (rpm / 10000) * 400; // variação perceptível
     oscillatorRef.current.frequency.setValueAtTime(
       freq,
       audioCtxRef.current.currentTime
     );
 
+    // Volume acompanha o RPM, mas sempre tem um mínimo (ronco da marcha lenta)
+    const volume = 0.1 + Math.min(0.5, rpm / 10000);
     gainRef.current.gain.setValueAtTime(
-      Math.min(0.5, rpm / 10000),
+      volume,
       audioCtxRef.current.currentTime
     );
   }, [rpm, engineOn]);
@@ -58,7 +64,7 @@ export default function App() {
     ignitionOsc.start();
     ignitionOsc.stop(audioCtxRef.current.currentTime + 0.3);
 
-    // Som contínuo do motor
+    // Som contínuo do motor (ronco + resposta ao RPM)
     oscillatorRef.current = audioCtxRef.current.createOscillator();
     gainRef.current = audioCtxRef.current.createGain();
 
@@ -83,7 +89,7 @@ export default function App() {
     audioCtxRef.current = null;
 
     setEngineOn(false);
-    setRpm(0);
+    setRpm(800);
     setSpeed(0);
   };
 
@@ -99,10 +105,8 @@ export default function App() {
     const handleWheel = (e) => {
       if (!engineOn) return;
       if (e.deltaY < 0) {
-        // Scroll para cima → acelera
         setAcceleration((prev) => Math.min(1, prev + 0.05));
       } else if (e.deltaY > 0) {
-        // Scroll para baixo → desacelera
         setAcceleration((prev) => Math.max(0, prev - 0.05));
       }
     };
