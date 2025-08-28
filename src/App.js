@@ -3,7 +3,7 @@ import "./App.css";
 
 export default function App() {
   const [acceleration, setAcceleration] = useState(0);
-  const [rpm, setRpm] = useState(800); // motor em marcha lenta
+  const [rpm, setRpm] = useState(800); // marcha lenta
   const [speed, setSpeed] = useState(0);
   const [engineOn, setEngineOn] = useState(false);
 
@@ -17,13 +17,15 @@ export default function App() {
 
     const interval = setInterval(() => {
       setRpm((prev) => {
-        const targetRpm = 800 + acceleration * 9200; // 800 (marcha lenta) até 10000
-        return prev + (targetRpm - prev) * 0.2;
+        const targetRpm = 800 + acceleration * 9200; // 800 até 10000
+        // resposta mais rápida → motor sobe de giro com menos inércia
+        return prev + (targetRpm - prev) * 0.4;
       });
-      setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.1);
 
-      // QUEDA MAIS RÁPIDA (5x mais rápido)
-      setAcceleration((prev) => Math.max(0, prev - 0.1)); 
+      setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.2);
+
+      // QUEDA rápida quando solta o acelerador
+      setAcceleration((prev) => Math.max(0, prev - 0.1));
     }, 100);
 
     return () => clearInterval(interval);
@@ -33,18 +35,19 @@ export default function App() {
   useEffect(() => {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
-    const freq = 50 + (rpm / 10000) * 400; 
+    // Frequência sonora proporcional à ACELERAÇÃO diretamente
+    const freq = 50 + acceleration * 2000; // aumenta conforme pisa
     oscillatorRef.current.frequency.setValueAtTime(
       freq,
       audioCtxRef.current.currentTime
     );
 
-    const volume = 0.1 + Math.min(0.5, rpm / 10000);
+    const volume = 0.1 + Math.min(0.5, acceleration);
     gainRef.current.gain.setValueAtTime(
       volume,
       audioCtxRef.current.currentTime
     );
-  }, [rpm, engineOn]);
+  }, [acceleration, engineOn]);
 
   // Função para iniciar motor
   const startEngine = () => {
@@ -98,16 +101,16 @@ export default function App() {
     const handleKeyDown = (e) => {
       if (!engineOn) return;
       if (e.key === "ArrowUp") {
-        setAcceleration((prev) => Math.min(1, prev + 0.1));
+        setAcceleration((prev) => Math.min(1, prev + 0.2)); // mais intenso
       }
     };
 
     const handleWheel = (e) => {
       if (!engineOn) return;
       if (e.deltaY < 0) {
-        setAcceleration((prev) => Math.min(1, prev + 0.05));
+        setAcceleration((prev) => Math.min(1, prev + 0.1)); // mais intenso
       } else if (e.deltaY > 0) {
-        setAcceleration((prev) => Math.max(0, prev - 0.05));
+        setAcceleration((prev) => Math.max(0, prev - 0.1));
       }
     };
 
