@@ -10,6 +10,29 @@
   margin-bottom: 20px;
 }
 
+.controls {
+  margin: 20px 0;
+}
+
+.start-btn, .stop-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.start-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.stop-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
 .gauges {
   display: flex;
   justify-content: center;
