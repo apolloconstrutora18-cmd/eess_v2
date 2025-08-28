@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 export default function App() {
-  const [acceleration, setAcceleration] = useState(0); // valor 0-1 do pedal
-  const [rpm, setRpm] = useState(800); // marcha lenta
+  const [acceleration, setAcceleration] = useState(0); 
+  const [rpm, setRpm] = useState(800); 
   const [speed, setSpeed] = useState(0);
   const [engineOn, setEngineOn] = useState(false);
 
@@ -17,17 +17,15 @@ export default function App() {
 
     const interval = setInterval(() => {
       setRpm((prev) => {
-        const targetRpm = 800 + acceleration * 9200; // até 10.000 rpm
-        return prev + (targetRpm - prev) * 0.4; // resposta rápida
+        const targetRpm = 800 + acceleration * 9200; 
+        return prev + (targetRpm - prev) * 0.3; 
       });
 
       setSpeed((prev) => {
         if (acceleration > 0) {
-          // se pedal pressionado → acelera continuamente
-          return prev + acceleration * 2.5; // ganho de velocidade
+          return prev + acceleration * 2.0; 
         } else {
-          // se soltar pedal → desacelera naturalmente
-          return Math.max(0, prev - 0.8);
+          return Math.max(0, prev - 0.5);
         }
       });
     }, 100);
@@ -39,7 +37,7 @@ export default function App() {
   useEffect(() => {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
-    const freq = 50 + acceleration * 2000; // som proporcional ao pedal
+    const freq = 50 + acceleration * 2000; 
     oscillatorRef.current.frequency.setValueAtTime(
       freq,
       audioCtxRef.current.currentTime
@@ -52,6 +50,33 @@ export default function App() {
     );
   }, [acceleration, engineOn]);
 
+  // Atalhos: seta para cima e scroll do mouse
+  useEffect(() => {
+    if (!engineOn) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowUp") {
+        setAcceleration((prev) => Math.min(1, prev + 0.1));
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (e.deltaY < 0) {
+        setAcceleration((prev) => Math.min(1, prev + 0.05)); 
+      } else {
+        setAcceleration((prev) => Math.max(0, prev - 0.05)); 
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("wheel", handleWheel);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [engineOn]);
+
   // Função para iniciar motor
   const startEngine = () => {
     if (engineOn) return;
@@ -59,7 +84,7 @@ export default function App() {
     audioCtxRef.current = new (window.AudioContext ||
       window.webkitAudioContext)();
 
-    // Som curto de ignição
+    // Som de ignição curto
     const ignitionOsc = audioCtxRef.current.createOscillator();
     const ignitionGain = audioCtxRef.current.createGain();
     ignitionOsc.type = "square";
@@ -137,21 +162,10 @@ export default function App() {
       </div>
 
       {engineOn && (
-        <div className="accelerator">
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={acceleration}
-            onChange={(e) => setAcceleration(parseFloat(e.target.value))}
-          />
-          <div className="pedal-label">
-            Pedal: {Math.round(acceleration * 100)}%
-          </div>
+        <div className="pedal-status">
+          Pedal (aceleração): {Math.round(acceleration * 100)}%
         </div>
       )}
     </div>
   );
 }
-
