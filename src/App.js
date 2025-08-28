@@ -5,162 +5,133 @@ export default function App() {
   const [acceleration, setAcceleration] = useState(0);
   const [rpm, setRpm] = useState(0);
   const [speed, setSpeed] = useState(0);
-  const [engineType, setEngineType] = useState("porsche");
-  const [theme, setTheme] = useState("sport");
   const [engineOn, setEngineOn] = useState(false);
 
   const audioCtxRef = useRef(null);
   const oscillatorRef = useRef(null);
   const gainRef = useRef(null);
 
-  // Configurações de motores
-  const engineConfigs = {
-    porsche: { type: "sawtooth", baseFreq: 120, maxFreq: 2200, volume: 0.6 },
-    moto: { type: "square", baseFreq: 180, maxFreq: 6000, volume: 0.4 },
-    popular: { type: "triangle", baseFreq: 80, maxFreq: 3500, volume: 0.5 },
-  };
+  // Atualização de RPM e velocidade
+  useEffect(() => {
+    if (!engineOn) return;
 
-  // Configurações de temas
-  const themeConfigs = {
-    sport: { bg: "#1a1a1a", dial: "#e60000", needle: "#ff3300", text: "#fff" },
-    classic: { bg: "#222", dial: "#444", needle: "#f2c200", text: "#f2f2f2" },
-    futuristic: { bg: "#001f3f", dial: "#39cccc", needle: "#7fdbff", text: "#ffffff" },
-  };
+    const interval = setInterval(() => {
+      setRpm((prev) => prev + (acceleration * 10000 - prev) * 0.2);
+      setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.1);
+      setAcceleration((prev) => Math.max(0, prev - 0.02));
+    }, 100);
 
-  // Liga o motor
+    return () => clearInterval(interval);
+  }, [acceleration, engineOn]);
+
+  // Controle de som do motor
+  useEffect(() => {
+    if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
+
+    const freq = 100 + (rpm / 10000) * 1900;
+    oscillatorRef.current.frequency.setValueAtTime(
+      freq,
+      audioCtxRef.current.currentTime
+    );
+
+    gainRef.current.gain.setValueAtTime(
+      Math.min(0.5, rpm / 10000),
+      audioCtxRef.current.currentTime
+    );
+  }, [rpm, engineOn]);
+
+  // Função para iniciar motor
   const startEngine = () => {
-    if (!engineOn) {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      oscillatorRef.current = audioCtxRef.current.createOscillator();
-      gainRef.current = audioCtxRef.current.createGain();
+    if (engineOn) return;
 
-      const config = engineConfigs[engineType];
-      oscillatorRef.current.type = config.type;
-      oscillatorRef.current.connect(gainRef.current);
-      gainRef.current.connect(audioCtxRef.current.destination);
+    audioCtxRef.current = new (window.AudioContext ||
+      window.webkitAudioContext)();
 
-      oscillatorRef.current.start();
+    // Criar som de ignição curto (beep)
+    const ignitionOsc = audioCtxRef.current.createOscillator();
+    const ignitionGain = audioCtxRef.current.createGain();
+    ignitionOsc.type = "square";
+    ignitionOsc.frequency.setValueAtTime(200, audioCtxRef.current.currentTime);
+    ignitionGain.gain.setValueAtTime(0.5, audioCtxRef.current.currentTime);
+    ignitionOsc.connect(ignitionGain);
+    ignitionGain.connect(audioCtxRef.current.destination);
+    ignitionOsc.start();
+    ignitionOsc.stop(audioCtxRef.current.currentTime + 0.3);
 
-      setEngineOn(true);
-    }
+    // Criar motor (ronco contínuo)
+    oscillatorRef.current = audioCtxRef.current.createOscillator();
+    gainRef.current = audioCtxRef.current.createGain();
+
+    oscillatorRef.current.type = "sawtooth";
+    oscillatorRef.current.connect(gainRef.current);
+    gainRef.current.connect(audioCtxRef.current.destination);
+
+    oscillatorRef.current.start();
+
+    setEngineOn(true);
   };
 
-  // Desliga o motor
+  // Função para desligar motor
   const stopEngine = () => {
-    if (oscillatorRef.current) {
-      oscillatorRef.current.stop();
-      oscillatorRef.current.disconnect();
-      gainRef.current.disconnect();
-    }
-    audioCtxRef.current = null;
+    if (!engineOn || !oscillatorRef.current) return;
+
+    oscillatorRef.current.stop();
+    audioCtxRef.current.close();
+
     oscillatorRef.current = null;
     gainRef.current = null;
+    audioCtxRef.current = null;
 
     setEngineOn(false);
     setRpm(0);
     setSpeed(0);
-    setAcceleration(0);
   };
 
-  // Troca de tipo de motor em tempo real
-  useEffect(() => {
-    if (oscillatorRef.current) {
-      oscillatorRef.current.type = engineConfigs[engineType].type;
-    }
-  }, [engineType]);
-
-  // Simulação de aceleração, RPM e velocidade
-  useEffect(() => {
-    if (!engineOn) return;
-    const interval = setInterval(() => {
-      setRpm((prev) => prev + (acceleration * 10000 - prev) * 0.15);
-      setSpeed((prev) => prev + (acceleration * 320 - prev) * 0.08);
-      setAcceleration((prev) => Math.max(0, prev - 0.02)); // desacelera sozinho
-    }, 100);
-    return () => clearInterval(interval);
-  }, [acceleration, engineOn]);
-
-  // Atualiza frequência e volume conforme RPM
-  useEffect(() => {
-    if (engineOn && oscillatorRef.current && gainRef.current) {
-      const config = engineConfigs[engineType];
-      const freq = config.baseFreq + (rpm / 10000) * (config.maxFreq - config.baseFreq);
-
-      oscillatorRef.current.frequency.setValueAtTime(freq, audioCtxRef.current.currentTime);
-      gainRef.current.gain.setValueAtTime(Math.min(config.volume, rpm / 10000), audioCtxRef.current.currentTime);
-    }
-  }, [rpm, engineOn, engineType]);
-
-  // Cálculo da rotação dos ponteiros
   const rpmRotation = (rpm / 10000) * 270 - 135;
-  const speedRotation = (speed / 320) * 270 - 135;
-  const currentTheme = themeConfigs[theme];
+  const speedRotation = (speed / 220) * 270 - 135;
 
   return (
-    <div
-      className="App"
-      style={{
-        background: currentTheme.bg,
-        color: currentTheme.text,
-        minHeight: "100vh",
-        padding: "20px",
-      }}
-    >
+    <div className="App">
       <h1>EV Engine Sound Simulator</h1>
 
-      <div className="selectors">
-        <div className="engine-selector">
-          <label>Engine: </label>
-          <select value={engineType} onChange={(e) => setEngineType(e.target.value)} disabled={!engineOn}>
-            <option value="porsche">Porsche</option>
-            <option value="moto">Sport Bike</option>
-            <option value="popular">Compact Car</option>
-          </select>
-        </div>
-
-        <div className="theme-selector">
-          <label>Theme: </label>
-          <select value={theme} onChange={(e) => setTheme(e.target.value)}>
-            <option value="sport">Sport</option>
-            <option value="classic">Classic</option>
-            <option value="futuristic">Futuristic</option>
-          </select>
-        </div>
+      <div className="controls">
+        <button onClick={startEngine} disabled={engineOn}>
+          Start Engine
+        </button>
+        <button onClick={stopEngine} disabled={!engineOn}>
+          Stop Engine
+        </button>
       </div>
 
-      <div className="controls">
-        {!engineOn ? (
-          <button className="start-btn" onClick={startEngine}>Start</button>
-        ) : (
-          <button className="stop-btn" onClick={stopEngine}>Stop</button>
-        )}
+      <div className="gauges">
+        <div className="gauge">
+          <div className="dial rpm"></div>
+          <div
+            className="needle"
+            style={{ transform: `rotate(${rpmRotation}deg)` }}
+          ></div>
+          <div className="label">{Math.round(rpm)} RPM</div>
+        </div>
+
+        <div className="gauge">
+          <div className="dial speed"></div>
+          <div
+            className="needle"
+            style={{ transform: `rotate(${speedRotation}deg)` }}
+          ></div>
+          <div className="label">{Math.round(speed)} km/h</div>
+        </div>
       </div>
 
       {engineOn && (
-        <>
-          <div className="gauges">
-            <div className="gauge">
-              <div className="dial" style={{ borderColor: currentTheme.dial }}></div>
-              <div className="needle" style={{ transform: `rotate(${rpmRotation}deg)`, background: currentTheme.needle }}></div>
-              <div className="label">{Math.round(rpm)} RPM</div>
-            </div>
-
-            <div className="gauge">
-              <div className="dial" style={{ borderColor: currentTheme.dial }}></div>
-              <div className="needle" style={{ transform: `rotate(${speedRotation}deg)`, background: currentTheme.needle }}></div>
-              <div className="label">{Math.round(speed)} km/h</div>
-            </div>
-          </div>
-
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={acceleration}
-            onChange={(e) => setAcceleration(parseFloat(e.target.value))}
-          />
-        </>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={acceleration}
+          onChange={(e) => setAcceleration(parseFloat(e.target.value))}
+        />
       )}
     </div>
   );
