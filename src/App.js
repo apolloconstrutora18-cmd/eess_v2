@@ -18,7 +18,7 @@ export default function App() {
     const interval = setInterval(() => {
       setRpm((prev) => prev + (acceleration * 10000 - prev) * 0.2);
       setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.1);
-      setAcceleration((prev) => Math.max(0, prev - 0.02)); // aceleração volta para zero
+      setAcceleration((prev) => Math.max(0, prev - 0.02)); // aceleração volta a zero
     }, 100);
 
     return () => clearInterval(interval);
@@ -86,6 +86,35 @@ export default function App() {
     setRpm(0);
     setSpeed(0);
   };
+
+  // Eventos de teclado e scroll
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!engineOn) return;
+      if (e.key === "ArrowUp") {
+        setAcceleration((prev) => Math.min(1, prev + 0.1));
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (!engineOn) return;
+      if (e.deltaY < 0) {
+        // Scroll para cima → acelera
+        setAcceleration((prev) => Math.min(1, prev + 0.05));
+      } else if (e.deltaY > 0) {
+        // Scroll para baixo → desacelera
+        setAcceleration((prev) => Math.max(0, prev - 0.05));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("wheel", handleWheel);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [engineOn]);
 
   const rpmRotation = (rpm / 10000) * 270 - 135;
   const speedRotation = (speed / 220) * 270 - 135;
