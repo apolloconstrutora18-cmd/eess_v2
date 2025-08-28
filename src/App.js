@@ -21,7 +21,9 @@ export default function App() {
         return prev + (targetRpm - prev) * 0.2;
       });
       setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.1);
-      setAcceleration((prev) => Math.max(0, prev - 0.02)); // aceleração retorna a zero
+
+      // QUEDA MAIS RÁPIDA (5x mais rápido)
+      setAcceleration((prev) => Math.max(0, prev - 0.1)); 
     }, 100);
 
     return () => clearInterval(interval);
@@ -31,14 +33,12 @@ export default function App() {
   useEffect(() => {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
-    // Frequência baseia-se no RPM (quanto maior o RPM, mais agudo)
-    const freq = 50 + (rpm / 10000) * 400; // variação perceptível
+    const freq = 50 + (rpm / 10000) * 400; 
     oscillatorRef.current.frequency.setValueAtTime(
       freq,
       audioCtxRef.current.currentTime
     );
 
-    // Volume acompanha o RPM, mas sempre tem um mínimo (ronco da marcha lenta)
     const volume = 0.1 + Math.min(0.5, rpm / 10000);
     gainRef.current.gain.setValueAtTime(
       volume,
@@ -64,7 +64,7 @@ export default function App() {
     ignitionOsc.start();
     ignitionOsc.stop(audioCtxRef.current.currentTime + 0.3);
 
-    // Som contínuo do motor (ronco + resposta ao RPM)
+    // Som contínuo do motor
     oscillatorRef.current = audioCtxRef.current.createOscillator();
     gainRef.current = audioCtxRef.current.createGain();
 
