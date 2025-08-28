@@ -18,13 +18,13 @@ export default function App() {
     const interval = setInterval(() => {
       setRpm((prev) => prev + (acceleration * 10000 - prev) * 0.2);
       setSpeed((prev) => prev + (acceleration * 220 - prev) * 0.1);
-      setAcceleration((prev) => Math.max(0, prev - 0.02));
+      setAcceleration((prev) => Math.max(0, prev - 0.02)); // aceleração volta para zero
     }, 100);
 
     return () => clearInterval(interval);
   }, [acceleration, engineOn]);
 
-  // Controle de som do motor
+  // Controle do som do motor
   useEffect(() => {
     if (!engineOn || !oscillatorRef.current || !gainRef.current) return;
 
@@ -47,7 +47,7 @@ export default function App() {
     audioCtxRef.current = new (window.AudioContext ||
       window.webkitAudioContext)();
 
-    // Criar som de ignição curto (beep)
+    // Som curto de ignição
     const ignitionOsc = audioCtxRef.current.createOscillator();
     const ignitionGain = audioCtxRef.current.createGain();
     ignitionOsc.type = "square";
@@ -58,7 +58,7 @@ export default function App() {
     ignitionOsc.start();
     ignitionOsc.stop(audioCtxRef.current.currentTime + 0.3);
 
-    // Criar motor (ronco contínuo)
+    // Som contínuo do motor
     oscillatorRef.current = audioCtxRef.current.createOscillator();
     gainRef.current = audioCtxRef.current.createGain();
 
